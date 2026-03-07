@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.config import get_settings
 from app.database import Base, engine
+from app.routers.user import router as user_router
 
 settings = get_settings()
 
@@ -25,6 +26,8 @@ def create_application() -> FastAPI:
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, str]:
         return {"status": "ok"}
+
+    app.include_router(user_router)
 
     return app
 
