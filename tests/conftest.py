@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.database import Base, get_db
 from app.main import app
+from app.limiter import limiter
 
 TEST_DATABASE_PATH = Path("test_digital_library.db")
 TEST_DATABASE_URL = f"sqlite:///{TEST_DATABASE_PATH.resolve()}"
@@ -39,9 +40,13 @@ def client() -> Generator[TestClient, None, None]:
     Base.metadata.create_all(bind=test_engine)
     app.dependency_overrides[get_db] = override_get_db
 
+    previous_enabled = limiter.enabled
+    limiter.enabled = False
+
     with TestClient(app) as test_client:
         yield test_client
 
+    limiter.enabled = previous_enabled
     app.dependency_overrides.clear()
     Base.metadata.drop_all(bind=test_engine)
     test_engine.dispose()

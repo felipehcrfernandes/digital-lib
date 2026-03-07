@@ -11,6 +11,7 @@ Implemented so far:
 - User management
 - Book catalog management
 - Loan creation and return flow
+- Loan renewal flow
 - Loan history per user
 - Active and overdue loan listing
 - Book availability checks
@@ -157,6 +158,10 @@ digital-lib/
 - Overdue loans still count toward the user loan limit
 - A book must have available copies to be borrowed
 - Returning a book restores availability
+- A loan can be renewed once while still active
+- Returned loans cannot be renewed
+- Overdue loans cannot be renewed
+- Renewal extends the current due date by 14 days
 - `available_copies` cannot be greater than `total_copies`
 - ISBN is optional, but unique when provided
 
@@ -215,6 +220,7 @@ This keeps persistence concerns separate from the public API contract.
 ### Loans
 
 - Create loan
+- Renew loan
 - Return loan
 - List all loans
 - List active loans
@@ -303,6 +309,12 @@ Application URLs:
 
 No request body required.
 
+### Renew a loan
+
+`POST /loans/1/renew`
+
+No request body required.
+
 ### Paginated list example
 
 `GET /books?skip=0&limit=10`
@@ -345,6 +357,7 @@ Examples of logged events:
 - `user_created`
 - `book_created`
 - `loan_created`
+- `loan_renewed`
 - `loan_returned`
 - `loan_overdue`
 
@@ -359,6 +372,7 @@ Initial protection was added to write operations such as:
 - `POST /users`
 - `POST /books`
 - `POST /loans`
+- `POST /loans/{loan_id}/renew`
 - `POST /loans/{loan_id}/return`
 
 This was a deliberate choice to protect the endpoints that create or change system state while keeping read endpoints unrestricted for evaluation usability.
@@ -387,6 +401,9 @@ Current coverage includes:
 - ISBN conflict handling
 - inventory rule validation
 - loan creation and return flow
+- loan renewal flow
+- loan renewal limit rule
+- returned loan renewal rejection
 - maximum active loan rule
 - unavailable book rule
 - loan pagination and user loan history pagination
@@ -415,5 +432,6 @@ Examples:
 ## Notes
 
 - Date/time handling is currently kept simple for the SQLite-based version of the project
+- Schema changes currently require recreating the local SQLite database because the project uses metadata creation instead of migrations
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
 - Docker and Postman export are planned as next steps

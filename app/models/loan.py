@@ -29,6 +29,7 @@ class Loan(Base):
     return_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     fine_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("0.00"))
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=LoanStatus.ACTIVE.value)
+    renewal_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

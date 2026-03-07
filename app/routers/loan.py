@@ -56,7 +56,6 @@ def list_overdue_loans(
     response_model=LoanResponse,
     status_code=status.HTTP_201_CREATED,
 )
-
 @limiter.limit("20/minute")
 def create_loan(
     request: Request,
@@ -70,3 +69,12 @@ def create_loan(
 @limiter.limit("20/minute")
 def return_loan(request: Request, loan_id: int, service: LoanService = Depends(get_loan_service)) -> LoanResponse:
     return service.return_loan(loan_id)
+
+@router.post("/{loan_id}/renew", response_model=LoanResponse)
+@limiter.limit("10/minute")
+def renew_loan(
+    request: Request,
+    loan_id: int,
+    service: LoanService = Depends(get_loan_service),
+) -> LoanResponse:
+    return service.renew_loan(loan_id)

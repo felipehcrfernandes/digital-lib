@@ -225,3 +225,85 @@ def test_list_user_loans_returns_paginated_response(client: TestClient) -> None:
     assert data["skip"] == 0
     assert data["limit"] == 1
     assert len(data["items"]) == 1
+
+def test_renew_loan_extends_due_date_and_increments_renewal_count(client: TestClient) -> None:
+    user = create_user(client, name="Felipe", email="felipe@example.com")
+    book = create_book(
+        client,
+        title="Renewable Book",
+        author="Author",
+        isbn="6666666666",
+    )
+
+    loan_response = client.post(
+        "/loans",
+        json={
+            "user_id": user["id"],
+            "book_id": book["id"],
+        },
+    )
+    loan = loan_response.json()
+
+    response = client.post(f"/loans/{loan['id']}/renew")
+
+    assert response.status_code == 200
+
+    renewed = response.json()
+    assert renewed["renewal_count"] == 1
+    assert renewed["due_date"] != loan["due_date"]
+    assert renewed["status"] == "ACTIVE"
+
+
+def test_renew_loan_returns_400_when_limit_is_reached(client: TestClient) -> None:
+    user = create_user(client, name="Felipe", email="felipe@example.com")
+    book = create_book(
+        client,
+        title="Renew Limit Book",
+        author="Author",
+        isbn="7777777777",
+    )
+
+    loan_response = client.post(
+        "/loans",
+        json={
+            "user_id": user["id"],
+            "book_id": book["id"],
+        },
+    )
+    loan_id = loan_response.json()["id"]
+
+    first_renewal = client.post(f"/loans/{loan_id}/renew")
+    second_renewal = client.post(f"/loans/{loan_id}/renew")
+
+    assert first_renewal.status_code == 200
+    assert second_renewal.status_code == 400
+    assert second_renewal.json() == {
+        "detail": "Loan renewal limit reached"
+    }
+
+
+def test_returned_loan_cannot_be_renewed(client: TestClient) -> None:
+    user = create_user(client, name="Felipe", email="felipe@example.com")
+    book = create_book(
+        client,
+        title="Returned Book",
+        author="Author",
+        isbn="8888888888",
+    )
+
+    loan_response = client.post(
+        "/loans",
+        json={
+            "user_id": user["id"],
+            "book_id": book["id"],
+        },
+    )
+    loan_id = loan_response.json()["id"]
+
+    client.post(f"/loans/{loan_id}/return")
+    response = client.post(f"/loans/{loan_id}/renew")
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Returned loans cannot be renewed"
+    }

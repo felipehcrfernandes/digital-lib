@@ -160,3 +160,75 @@ def test_loan_service_return_loan_calculates_fine_and_marks_returned() -> None:
         fine_amount=Decimal("4.00"),
         status=LoanStatus.RETURNED.value,
     )
+def test_loan_service_renew_loan_increases_due_date_and_renewal_count() -> None:
+    loan_repository = Mock()
+    user_repository = Mock()
+    book_repository = Mock()
+
+    loan = SimpleNamespace(
+        id=1,
+        user_id=1,
+        book_id=1,
+        status=LoanStatus.ACTIVE.value,
+        due_date=datetime(2026, 3, 10, 10, 0, 0),
+        renewal_count=0,
+    )
+
+    updated_loan = SimpleNamespace(
+        id=1,
+        user_id=1,
+        book_id=1,
+        status=LoanStatus.ACTIVE.value,
+        due_date=datetime(2026, 3, 24, 10, 0, 0),
+        renewal_count=1,
+    )
+
+    loan_repository.list_active.return_value = []
+    loan_repository.get_by_id.return_value = loan
+    loan_repository.update.return_value = updated_loan
+
+    service = LoanService(
+        loan_repository=loan_repository,
+        user_repository=user_repository,
+        book_repository=book_repository,
+    )
+
+    result = service.renew_loan(1)
+
+    assert result.renewal_count == 1
+    assert result.due_date == datetime(2026, 3, 24, 10, 0, 0)
+
+    loan_repository.update.assert_called_once_with(
+        loan,
+        due_date=datetime(2026, 3, 24, 10, 0, 0),
+        renewal_count=1,
+    )
+
+
+def test_loan_service_renew_loan_raises_when_limit_reached() -> None:
+    loan_repository = Mock()
+    user_repository = Mock()
+    book_repository = Mock()
+
+    loan = SimpleNamespace(
+        id=1,
+        user_id=1,
+        book_id=1,
+        status=LoanStatus.ACTIVE.value,
+        due_date=datetime(2026, 3, 10, 10, 0, 0),
+        renewal_count=1,
+    )
+
+    loan_repository.list_active.return_value = []
+    loan_repository.get_by_id.return_value = loan
+
+    service = LoanService(
+        loan_repository=loan_repository,
+        user_repository=user_repository,
+        book_repository=book_repository,
+    )
+
+    with pytest.raises(BusinessRuleError, match="Loan renewal limit reached"):
+        service.renew_loan(1)
+
+    loan_repository.update.assert_not_called()

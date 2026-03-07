@@ -19,6 +19,7 @@ class LoanService:
     LOAN_PERIOD_DAYS = 14
     FINE_PER_DAY = Decimal("2.00")
     MAX_ACTIVE_LOANS = 3
+    MAX_RENEWALS = 1
 
     def __init__(
         self,
@@ -148,6 +149,38 @@ class LoanService:
                 "user_id": updated_loan.user_id,
                 "book_id": updated_loan.book_id,
                 "fine_amount": updated_loan.fine_amount,
+            },
+        )
+
+        return updated_loan
+    
+    def renew_loan(self, loan_id: int) -> Loan:
+        self._refresh_overdue_loans()
+
+        loan = self.get_loan(loan_id)
+
+        if loan.status == LoanStatus.RETURNED.value:
+            raise BusinessRuleError("Returned loans cannot be renewed")
+
+        if loan.status == LoanStatus.OVERDUE.value:
+            raise BusinessRuleError("Overdue loans cannot be renewed")
+
+        if loan.renewal_count >= self.MAX_RENEWALS:
+            raise BusinessRuleError("Loan renewal limit reached")
+
+        updated_loan = self.loan_repository.update(
+            loan,
+            due_date=loan.due_date + timedelta(days=self.LOAN_PERIOD_DAYS),
+            renewal_count=loan.renewal_count + 1,
+        )
+
+        logger.info(
+            "loan renewed",
+            extra={
+                "event": "loan_renewed",
+                "loan_id": updated_loan.id,
+                "user_id": updated_loan.user_id,
+                "book_id": updated_loan.book_id,
             },
         )
 

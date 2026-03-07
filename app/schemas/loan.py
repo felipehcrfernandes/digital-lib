@@ -32,4 +32,5 @@ class LoanResponse(BaseModel):
         description="Late fee amount in BRL.",
     )
     status: LoanStatus
+    renewal_count: int
     created_at: datetime
