@@ -1,10 +1,13 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+
+UserName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
 
 class UserBase(BaseModel):
-    name: str = Field(..., min_length=2, max_length=120)
+    name: UserName
     email: EmailStr
 
 
@@ -13,7 +16,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=2, max_length=120)
+    name: UserName | None = None
     email: EmailStr | None = None
     is_active: bool | None = None
 
