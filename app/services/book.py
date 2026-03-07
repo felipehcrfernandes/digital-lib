@@ -1,15 +1,23 @@
 from app.exceptions import BusinessRuleError, ConflictError, NotFoundError
 from app.models.book import Book
 from app.repositories.book import BookRepository
-from app.schemas.book import BookCreate, BookUpdate
+from app.schemas.book import BookCreate, BookResponse, BookUpdate
+from app.schemas.common import PaginatedResponse
 
 
 class BookService:
     def __init__(self, repository: BookRepository) -> None:
         self.repository = repository
 
-    def list_books(self) -> list[Book]:
-        return self.repository.list_all()
+    def list_books(self, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[BookResponse]:
+        items = self.repository.list_all(skip=skip, limit=limit)
+        total = self.repository.count_all()
+        return PaginatedResponse[BookResponse](
+            total=total,
+            skip=skip,
+            limit=limit,
+            items=items,
+        )
 
     def get_book(self, book_id: int) -> Book:
         book = self.repository.get_by_id(book_id)

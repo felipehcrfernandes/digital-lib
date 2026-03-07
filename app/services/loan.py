@@ -8,7 +8,8 @@ from app.models.user import User
 from app.repositories.book import BookRepository
 from app.repositories.loan import LoanRepository
 from app.repositories.user import UserRepository
-from app.schemas.loan import LoanCreate
+from app.schemas.loan import LoanCreate, LoanResponse
+from app.schemas.common import PaginatedResponse
 
 
 class LoanService:
@@ -26,22 +27,50 @@ class LoanService:
         self.user_repository = user_repository
         self.book_repository = book_repository
 
-    def list_loans(self) -> list[Loan]:
+    def list_loans(self, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[LoanResponse]:
         self._refresh_overdue_loans()
-        return self.loan_repository.list_all()
+        items = self.loan_repository.list_all(skip=skip, limit=limit)
+        total = self.loan_repository.count_all()
+        return PaginatedResponse[LoanResponse](
+            total=total,
+            skip=skip,
+            limit=limit,
+            items=items,
+        )
 
-    def list_active_loans(self) -> list[Loan]:
+    def list_active_loans(self, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[LoanResponse]:
         self._refresh_overdue_loans()
-        return self.loan_repository.list_active()
+        items = self.loan_repository.list_active(skip=skip, limit=limit)
+        total = self.loan_repository.count_active()
+        return PaginatedResponse[LoanResponse](
+            total=total,
+            skip=skip,
+            limit=limit,
+            items=items,
+        )
 
-    def list_overdue_loans(self) -> list[Loan]:
+    def list_overdue_loans(self, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[LoanResponse]:
         self._refresh_overdue_loans()
-        return self.loan_repository.list_overdue()
+        items = self.loan_repository.list_overdue(skip=skip, limit=limit)
+        total = self.loan_repository.count_overdue()
+        return PaginatedResponse[LoanResponse](
+            total=total,
+            skip=skip,
+            limit=limit,
+            items=items,
+        )
 
-    def list_user_loans(self, user_id: int) -> list[Loan]:
+    def list_user_loans(self, user_id: int, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[LoanResponse]:
         self._get_user_or_raise(user_id)
         self._refresh_overdue_loans()
-        return self.loan_repository.list_by_user(user_id)
+        items = self.loan_repository.list_by_user(user_id, skip=skip, limit=limit)
+        total = self.loan_repository.count_by_user(user_id)
+        return PaginatedResponse[LoanResponse](
+            total=total,
+            skip=skip,
+            limit=limit,
+            items=items,
+        )
 
     def create_loan(self, payload: LoanCreate) -> Loan:
         user = self._get_user_or_raise(payload.user_id)

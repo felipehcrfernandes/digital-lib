@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.repositories.user import UserRepository
-from app.schemas.user import UserCreate, UserResponse
-from app.services.user import UserService
 from app.repositories.book import BookRepository
 from app.repositories.loan import LoanRepository
+from app.repositories.user import UserRepository
+from app.schemas.common import PaginatedResponse
 from app.schemas.loan import LoanResponse
+from app.schemas.user import UserCreate, UserResponse
 from app.services.loan import LoanService
+from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -28,9 +29,13 @@ def get_loan_service(db: Session = Depends(get_db)) -> LoanService:
     )
 
 
-@router.get("", response_model=list[UserResponse])
-def list_users(service: UserService = Depends(get_user_service)) -> list[UserResponse]:
-    return service.list_users()
+@router.get("", response_model=PaginatedResponse[UserResponse])
+def list_users(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    service: UserService = Depends(get_user_service),
+) -> PaginatedResponse[UserResponse]:
+    return service.list_users(skip=skip, limit=limit)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -50,9 +55,12 @@ def create_user(
     return service.create_user(payload)
 
 
-@router.get("/{user_id}/loans", response_model=list[LoanResponse])
-def list_user_loans(user_id: int, 
-                    service: LoanService = Depends(get_loan_service),
-) -> list[LoanResponse]:
-    return service.list_user_loans(user_id)
+@router.get("/{user_id}/loans", response_model=PaginatedResponse[LoanResponse])
+def list_user_loans(
+    user_id: int,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    service: LoanService = Depends(get_loan_service),
+) -> PaginatedResponse[LoanResponse]:
+    return service.list_user_loans(user_id, skip=skip, limit=limit)
 

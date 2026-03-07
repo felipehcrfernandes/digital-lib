@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.repositories.book import BookRepository
 from app.repositories.loan import LoanRepository
 from app.repositories.user import UserRepository
+from app.schemas.common import PaginatedResponse
 from app.schemas.loan import LoanCreate, LoanResponse
 from app.services.loan import LoanService
 
@@ -22,19 +23,31 @@ def get_loan_service(db: Session = Depends(get_db)) -> LoanService:
     )
 
 
-@router.get("", response_model=list[LoanResponse])
-def list_loans(service: LoanService = Depends(get_loan_service)) -> list[LoanResponse]:
-    return service.list_loans()
+@router.get("", response_model=PaginatedResponse[LoanResponse])
+def list_loans(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    service: LoanService = Depends(get_loan_service),
+) -> PaginatedResponse[LoanResponse]:
+    return service.list_loans(skip=skip, limit=limit)
 
 
-@router.get("/active", response_model=list[LoanResponse])
-def list_active_loans(service: LoanService = Depends(get_loan_service)) -> list[LoanResponse]:
-    return service.list_active_loans()
+@router.get("/active", response_model=PaginatedResponse[LoanResponse])
+def list_active_loans(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    service: LoanService = Depends(get_loan_service),
+) -> PaginatedResponse[LoanResponse]:
+    return service.list_active_loans(skip=skip, limit=limit)
 
 
-@router.get("/overdue", response_model=list[LoanResponse])
-def list_overdue_loans(service: LoanService = Depends(get_loan_service)) -> list[LoanResponse]:
-    return service.list_overdue_loans()
+@router.get("/overdue", response_model=PaginatedResponse[LoanResponse])
+def list_overdue_loans(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    service: LoanService = Depends(get_loan_service),
+) -> PaginatedResponse[LoanResponse]:
+    return service.list_overdue_loans(skip=skip, limit=limit)
 
 
 @router.post(

@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
@@ -8,9 +8,13 @@ class BookRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list_all(self) -> list[Book]:
-        statement = select(Book).order_by(Book.id)
+    def list_all(self, *, skip: int = 0, limit: int = 10) -> list[Book]:
+        statement = select(Book).order_by(Book.id).offset(skip).limit(limit)
         return list(self.db.scalars(statement).all())
+
+    def count_all(self) -> int:
+        statement = select(func.count()).select_from(Book)
+        return self.db.scalar(statement) or 0
 
     def get_by_id(self, book_id: int) -> Book | None:
         return self.db.get(Book, book_id)

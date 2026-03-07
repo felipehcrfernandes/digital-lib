@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.repositories.book import BookRepository
 from app.schemas.book import BookCreate, BookResponse
+from app.schemas.common import PaginatedResponse
 from app.services.book import BookService
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -14,9 +15,13 @@ def get_book_service(db: Session = Depends(get_db)) -> BookService:
     return BookService(repository)
 
 
-@router.get("", response_model=list[BookResponse])
-def list_books(service: BookService = Depends(get_book_service)) -> list[BookResponse]:
-    return service.list_books()
+@router.get("", response_model=PaginatedResponse[BookResponse])
+def list_books(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100),
+    service: BookService = Depends(get_book_service),
+) -> PaginatedResponse[BookResponse]:
+    return service.list_books(skip=skip, limit=limit)
 
 
 @router.get("/{book_id}", response_model=BookResponse)

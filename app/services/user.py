@@ -1,15 +1,23 @@
 from app.exceptions import ConflictError, NotFoundError
 from app.models.user import User
 from app.repositories.user import UserRepository
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.common import PaginatedResponse
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 
 class UserService:
     def __init__(self, repository: UserRepository) -> None:
         self.repository = repository
 
-    def list_users(self) -> list[User]:
-        return self.repository.list_all()
+    def list_users(self, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[UserResponse]:
+        items = self.repository.list_all(skip=skip, limit=limit)
+        total = self.repository.count_all()
+        return PaginatedResponse[UserResponse](
+            total=total,
+            skip=skip,
+            limit=limit,
+            items=items,
+        )
 
     def get_user(self, user_id: int) -> User:
         user = self.repository.get_by_id(user_id)
