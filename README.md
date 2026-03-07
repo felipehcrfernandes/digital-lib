@@ -17,11 +17,11 @@ Implemented so far:
 - Global error handling
 - Input validation and normalization
 - Pagination on list endpoints
+- Structured JSON logging
 - Automatic Swagger/OpenAPI documentation
 
 Planned next steps:
 
-- Structured logging
 - Automated tests
 - Additional differentials
 - Docker setup
@@ -97,6 +97,7 @@ digital-lib/
 │   ├── config.py
 │   ├── database.py
 │   ├── exceptions.py
+│   ├── logging_config.py
 │   ├── main.py
 │   ├── models/
 │   ├── repositories/
@@ -222,6 +223,8 @@ This keeps persistence concerns separate from the public API contract.
 - Global exception handlers
 - Validation with Pydantic
 - Pagination on list endpoints
+- Structured request logging via middleware
+- Structured business event logging in the service layer
 
 ## Installation
 
@@ -321,6 +324,26 @@ Response shape:
 }
 ```
 
+## Logging
+
+The application currently uses structured JSON logs.
+
+Two logging layers are implemented:
+
+- HTTP request logging in middleware
+- business event logging in the service layer
+
+Examples of logged events:
+
+- `http_request`
+- `user_created`
+- `book_created`
+- `loan_created`
+- `loan_returned`
+- `loan_overdue`
+
+This helps with debugging, traceability, and future observability improvements.
+
 ## Error Handling
 
 The API currently maps domain exceptions to HTTP responses:
@@ -339,4 +362,4 @@ Examples:
 
 - Date/time handling is currently kept simple for the SQLite-based version of the project
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
-- Logging, tests, Docker, and Postman export are planned as next steps
+- Tests, Docker, and Postman export are planned as next steps

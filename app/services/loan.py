@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -11,6 +13,7 @@ from app.repositories.user import UserRepository
 from app.schemas.loan import LoanCreate, LoanResponse
 from app.schemas.common import PaginatedResponse
 
+logger = logging.getLogger(__name__)
 
 class LoanService:
     LOAN_PERIOD_DAYS = 14
@@ -97,6 +100,16 @@ class LoanService:
             available_copies=book.available_copies - 1,
         )
 
+        logger.info(
+            "loan created",
+            extra={
+                "event": "loan_created",
+                "loan_id": loan.id,
+                "user_id": user.id,
+                "book_id": book.id,
+            },
+        )
+
         return loan
 
     def return_loan(self, loan_id: int) -> Loan:
@@ -120,12 +133,25 @@ class LoanService:
             available_copies=book.available_copies + 1,
         )
 
-        return self.loan_repository.update(
+        updated_loan = self.loan_repository.update(
             loan,
             return_date=returned_at,
             fine_amount=fine_amount,
             status=LoanStatus.RETURNED.value,
         )
+
+        logger.info(
+            "loan returned",
+            extra={
+                "event": "loan_returned",
+                "loan_id": updated_loan.id,
+                "user_id": updated_loan.user_id,
+                "book_id": updated_loan.book_id,
+                "fine_amount": updated_loan.fine_amount,
+            },
+        )
+
+        return updated_loan
 
     def get_loan(self, loan_id: int) -> Loan:
         loan = self.loan_repository.get_by_id(loan_id)
@@ -142,6 +168,17 @@ class LoanService:
                     loan,
                     status=LoanStatus.OVERDUE.value,
                 )
+
+                logger.info(
+                    "loan marked as overdue",
+                    extra={
+                        "event": "loan_overdue",
+                        "loan_id": loan.id,
+                        "user_id": loan.user_id,
+                        "book_id": loan.book_id,
+                    },
+                )
+        
 
     def _get_user_or_raise(self, user_id: int) -> User:
         user = self.user_repository.get_by_id(user_id)

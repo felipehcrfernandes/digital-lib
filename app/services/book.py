@@ -1,9 +1,12 @@
+import logging
+
 from app.exceptions import BusinessRuleError, ConflictError, NotFoundError
 from app.models.book import Book
 from app.repositories.book import BookRepository
 from app.schemas.book import BookCreate, BookResponse, BookUpdate
 from app.schemas.common import PaginatedResponse
 
+logger = logging.getLogger(__name__)
 
 class BookService:
     def __init__(self, repository: BookRepository) -> None:
@@ -34,7 +37,7 @@ class BookService:
         if payload.available_copies > payload.total_copies:
             raise BusinessRuleError("Available copies cannot be greater than total copies")
 
-        return self.repository.create(
+        book = self.repository.create(
             title=payload.title,
             author=payload.author,
             isbn=payload.isbn,
@@ -42,6 +45,16 @@ class BookService:
             total_copies=payload.total_copies,
             available_copies=payload.available_copies,
         )
+
+        logger.info(
+            "book created",
+            extra={
+                "event": "book_created",
+                "book_id": book.id,
+            },
+        )
+
+        return book
 
     def update_book(self, book_id: int, payload: BookUpdate) -> Book:
         book = self.get_book(book_id)

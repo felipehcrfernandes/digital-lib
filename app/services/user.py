@@ -1,8 +1,12 @@
+import logging
+
 from app.exceptions import ConflictError, NotFoundError
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.common import PaginatedResponse
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -29,11 +33,18 @@ class UserService:
         existing_user = self.repository.get_by_email(payload.email)
         if existing_user is not None:
             raise ConflictError("A user with this email already exists")
-
-        return self.repository.create(
+        user = self.repository.create(
             name=payload.name,
             email=payload.email,
         )
+        logger.info(
+            "user created",
+            extra={
+                "event": "user_created",
+                "user_id": user.id,
+            },
+        )
+        return user
 
     def update_user(self, user_id: int, payload: UserUpdate) -> User:
         user = self.get_user(user_id)
