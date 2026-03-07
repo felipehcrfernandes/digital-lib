@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoanStatus(str, Enum):
@@ -25,6 +25,11 @@ class LoanResponse(BaseModel):
     loan_date: datetime
     due_date: datetime
     return_date: datetime | None
-    fine_amount: Decimal
+    fine_amount: Decimal = Field(
+        max_digits=10,
+        decimal_places=2,
+        examples=["0.00"],
+        description="Late fee amount in BRL.",
+    )
     status: LoanStatus
     created_at: datetime

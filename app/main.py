@@ -6,6 +6,7 @@ from app.config import get_settings
 from app.database import Base, engine
 from app.routers.user import router as user_router
 from app.routers.book import router as book_router
+from app.routers.loan import router as loan_router
 
 settings = get_settings()
 
@@ -30,6 +31,7 @@ def create_application() -> FastAPI:
 
     app.include_router(user_router)
     app.include_router(book_router)
+    app.include_router(loan_router)
 
     return app
 
