@@ -19,6 +19,7 @@ Implemented so far:
 - Pagination on list endpoints
 - Structured JSON logging
 - Automated unit and integration tests with pytest
+- Rate limiting on write endpoints
 - Automatic Swagger/OpenAPI documentation
 
 Planned next steps:
@@ -229,6 +230,7 @@ This keeps persistence concerns separate from the public API contract.
 - Structured request logging via middleware
 - Structured business event logging in the service layer
 - Automated unit and integration tests with pytest
+- Rate limiting on state-changing endpoints
 
 ## Installation
 
@@ -347,6 +349,19 @@ Examples of logged events:
 - `loan_overdue`
 
 This helps with debugging, traceability, and future observability improvements.
+
+## Rate Limiting
+
+The API currently applies rate limiting to state-changing endpoints using `slowapi`.
+
+Initial protection was added to write operations such as:
+
+- `POST /users`
+- `POST /books`
+- `POST /loans`
+- `POST /loans/{loan_id}/return`
+
+This was a deliberate choice to protect the endpoints that create or change system state while keeping read endpoints unrestricted for evaluation usability.
 
 ## Testing
 

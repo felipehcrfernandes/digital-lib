@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
+from app.limiter import limiter
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -48,7 +49,10 @@ def get_user(user_id: int, service: UserService = Depends(get_user_service)) -> 
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
+
+@limiter.limit("10/minute")
 def create_user(
+    request: Request,
     payload: UserCreate,
     service: UserService = Depends(get_user_service),
 ) -> UserResponse:

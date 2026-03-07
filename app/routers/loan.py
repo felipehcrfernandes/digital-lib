@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
+from app.limiter import limiter
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -55,7 +56,10 @@ def list_overdue_loans(
     response_model=LoanResponse,
     status_code=status.HTTP_201_CREATED,
 )
+
+@limiter.limit("20/minute")
 def create_loan(
+    request: Request,
     payload: LoanCreate,
     service: LoanService = Depends(get_loan_service),
 ) -> LoanResponse:
@@ -63,5 +67,6 @@ def create_loan(
 
 
 @router.post("/{loan_id}/return", response_model=LoanResponse)
-def return_loan(loan_id: int, service: LoanService = Depends(get_loan_service)) -> LoanResponse:
+@limiter.limit("20/minute")
+def return_loan(request: Request, loan_id: int, service: LoanService = Depends(get_loan_service)) -> LoanResponse:
     return service.return_loan(loan_id)

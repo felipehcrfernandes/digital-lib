@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
+from app.limiter import limiter
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -34,7 +35,9 @@ def get_book(book_id: int, service: BookService = Depends(get_book_service)) -> 
     response_model=BookResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("10/minute")
 def create_book(
+    request: Request, 
     payload: BookCreate,
     service: BookService = Depends(get_book_service),
 ) -> BookResponse:
