@@ -18,7 +18,7 @@ Implemented so far:
 - Input validation and normalization
 - Pagination on list endpoints
 - Structured JSON logging
-- Automated tests with pytest
+- Automated unit and integration tests with pytest
 - Automatic Swagger/OpenAPI documentation
 
 Planned next steps:
@@ -57,6 +57,8 @@ SQLAlchemy was chosen as the ORM because it is mature, widely used, and supports
 ### SQLite
 
 SQLite was chosen for simplicity and fast evaluation. It allows the project to run with zero database setup while still supporting a realistic relational model.
+
+This was a deliberate choice for the case: it reduces execution friction for reviewers while keeping the design production-conscious through SQLAlchemy and configuration abstraction. The priority was business completeness, testing, and documentation over infrastructure complexity. Since the project already uses SQLAlchemy and a centralized database configuration, migrating to PostgreSQL later would be straightforward if production requirements demanded it.
 
 ### Integer IDs Instead of UUIDs
 
@@ -226,7 +228,7 @@ This keeps persistence concerns separate from the public API contract.
 - Pagination on list endpoints
 - Structured request logging via middleware
 - Structured business event logging in the service layer
-- Automated API tests with pytest and FastAPI TestClient
+- Automated unit and integration tests with pytest
 
 ## Installation
 
@@ -353,6 +355,12 @@ The project currently includes automated tests using:
 - `pytest`
 - `FastAPI TestClient`
 - a dedicated SQLite test database per test run
+- isolated service tests with mocked repositories
+
+The current suite includes:
+
+- integration tests for API endpoints and end-to-end flows
+- unit tests for service-layer business rules
 
 Current coverage includes:
 
@@ -367,6 +375,7 @@ Current coverage includes:
 - maximum active loan rule
 - unavailable book rule
 - loan pagination and user loan history pagination
+- isolated service-level rule validation with mocks
 
 ### Run tests
 
