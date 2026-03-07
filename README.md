@@ -18,11 +18,11 @@ Implemented so far:
 - Input validation and normalization
 - Pagination on list endpoints
 - Structured JSON logging
+- Automated tests with pytest
 - Automatic Swagger/OpenAPI documentation
 
 Planned next steps:
 
-- Automated tests
 - Additional differentials
 - Docker setup
 - Postman collection
@@ -106,6 +106,7 @@ digital-lib/
 │   └── services/
 ├── main.py
 ├── pyproject.toml
+├── tests/
 ├── uv.lock
 └── README.md
 ```
@@ -225,6 +226,7 @@ This keeps persistence concerns separate from the public API contract.
 - Pagination on list endpoints
 - Structured request logging via middleware
 - Structured business event logging in the service layer
+- Automated API tests with pytest and FastAPI TestClient
 
 ## Installation
 
@@ -344,6 +346,34 @@ Examples of logged events:
 
 This helps with debugging, traceability, and future observability improvements.
 
+## Testing
+
+The project currently includes automated tests using:
+
+- `pytest`
+- `FastAPI TestClient`
+- a dedicated SQLite test database per test run
+
+Current coverage includes:
+
+- health check
+- user creation and conflict handling
+- user pagination
+- input normalization checks
+- book creation and availability
+- ISBN conflict handling
+- inventory rule validation
+- loan creation and return flow
+- maximum active loan rule
+- unavailable book rule
+- loan pagination and user loan history pagination
+
+### Run tests
+
+```bash
+uv run pytest
+```
+
 ## Error Handling
 
 The API currently maps domain exceptions to HTTP responses:
@@ -362,4 +392,4 @@ Examples:
 
 - Date/time handling is currently kept simple for the SQLite-based version of the project
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
-- Tests, Docker, and Postman export are planned as next steps
+- Docker and Postman export are planned as next steps
