@@ -741,7 +741,7 @@ Examples:
 - During development, schema changes may require recreating the local SQLite database because the project uses metadata creation instead of migrations
 - In a production-ready environment, schema evolution should be handled with proper database migrations such as Alembic instead of deleting and recreating the database
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
-- Docker is still a likely next step for easier environment setup
+- Docker is a likely next step to provide a reproducible runtime environment, reduce machine-specific setup differences, and simplify future deployment and multi-service expansion.
 - Streaming chat responses, tighter response control, and richer UI polish are possible future improvements, but the current implementation intentionally stays simple to demonstrate the integration pattern clearly
 
 ## Screenshots
