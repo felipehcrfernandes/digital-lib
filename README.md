@@ -13,6 +13,7 @@ Implemented so far:
 - Loan creation and return flow
 - Loan renewal flow
 - Book reservation flow
+- Richer health endpoint with database check and lightweight metrics
 - Loan history per user
 - Active and overdue loan listing
 - Book availability checks
@@ -26,9 +27,9 @@ Implemented so far:
 
 Planned next steps:
 
-- Additional differentials
 - Docker setup
 - Postman collection
+- Final delivery polish
 
 ## Tech Stack
 
@@ -306,6 +307,7 @@ This was a deliberate scope decision: the internal layers were prepared for futu
 ### API Quality
 
 - Swagger/OpenAPI docs available automatically
+- Richer health endpoint with database check and lightweight metrics
 - Global exception handlers
 - Validation with Pydantic
 - Pagination on list endpoints
@@ -444,6 +446,36 @@ No request body required. Cancelling a reservation that is already `READY_FOR_PI
 `POST /reservations/1/fulfill`
 
 No request body required. This is intended for reservations currently in `READY_FOR_PICKUP`.
+
+### Health check
+
+`GET /health`
+
+Example response:
+
+```json
+{
+  "status": "ok",
+  "app_name": "Digital Library API",
+  "version": "0.1.0",
+  "timestamp": "2026-03-08T16:00:00+00:00",
+  "database": {
+    "status": "ok"
+  },
+  "metrics": {
+    "users": 2,
+    "books": 1,
+    "loans_total": 1,
+    "loans_active": 0,
+    "loans_overdue": 0,
+    "reservations_total": 1,
+    "reservations_waiting": 0,
+    "reservations_ready_for_pickup": 1
+  }
+}
+```
+
+The endpoint is intentionally simple and reviewer-friendly: it confirms database connectivity and exposes a small set of business-relevant counters without introducing external monitoring infrastructure.
 
 ### Paginated list example
 

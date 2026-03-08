@@ -2,6 +2,7 @@ import logging
 import time
 
 from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -11,13 +12,15 @@ from app.limiter import limiter
 
 from app.config import get_settings
 from app.logging_config import configure_logging
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
 from app.exceptions import BusinessRuleError, ConflictError, NotFoundError
 from app.routers.book import router as book_router
 from app.routers.loan import router as loan_router
 from app.routers.user import router as user_router
 from app.routers.reservation import router as reservation_router
-
+from app.repositories.health import HealthRepository
+from app.schemas.health import HealthResponse
+from app.services.health import HealthService
 
 settings = get_settings()
 
@@ -30,6 +33,14 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     yield
 
+
+def get_health_service() -> HealthService:
+    db: Session = SessionLocal()
+    try:
+        repository = HealthRepository(db)
+        return HealthService(repository, settings)
+    finally:
+        db.close()
 
 def create_application() -> FastAPI:
     app = FastAPI(
@@ -81,9 +92,10 @@ def create_application() -> FastAPI:
             content={"detail": str(exc)},
         )
 
-    @app.get("/health", tags=["health"])
-    def health_check() -> dict[str, str]:
-        return {"status": "ok"}
+    @app.get("/health", response_model=HealthResponse, tags=["health"])
+    def health_check() -> HealthResponse:
+        service = get_health_service()
+        return service.get_health()
 
     app.include_router(user_router)
     app.include_router(book_router)
