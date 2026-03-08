@@ -60,7 +60,7 @@ SQLAlchemy was chosen as the ORM because it is mature, widely used, and supports
 
 SQLite was chosen for simplicity and fast evaluation. It allows the project to run with zero database setup while still supporting a realistic relational model.
 
-This was a deliberate choice for the case: it reduces execution friction for reviewers while keeping the design production-conscious through SQLAlchemy and configuration abstraction. The priority was business completeness, testing, and documentation over infrastructure complexity. Since the project already uses SQLAlchemy and a centralized database configuration, migrating to PostgreSQL later would be straightforward if production requirements demanded it.
+This was a deliberate choice for the case: it keeps the project easy to run while preserving a production-conscious design through SQLAlchemy and centralized configuration. The priority was business completeness, testing, and documentation over infrastructure complexity. Since the project already uses SQLAlchemy and a centralized database configuration, migrating to PostgreSQL later would be straightforward if production requirements demanded it.
 
 ### Integer IDs Instead of UUIDs
 
@@ -201,6 +201,12 @@ The API does not expose SQLAlchemy models directly. Pydantic schemas are used fo
 - response output
 
 This keeps persistence concerns separate from the public API contract.
+
+### Update Capability Kept Internal First
+
+Update capability was implemented in the repository and service layers for users and books to keep the modules extensible, but update endpoints were not exposed immediately in the HTTP layer.
+
+This was a deliberate scope decision: the internal layers were prepared for future evolution without expanding the public API surface beyond the flows prioritized for the case.
 
 ## Implemented Features
 
@@ -376,7 +382,7 @@ Initial protection was added to write operations such as:
 - `POST /loans/{loan_id}/renew`
 - `POST /loans/{loan_id}/return`
 
-This was a deliberate choice to protect the endpoints that create or change system state while keeping read endpoints unrestricted for evaluation usability.
+This was a deliberate choice to protect the endpoints that create or change system state while keeping read endpoints unrestricted initially for simplicity and usability.
 
 ## Testing
 
