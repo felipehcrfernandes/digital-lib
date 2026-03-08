@@ -57,6 +57,7 @@ def test_loan_service_create_loan_raises_when_user_reaches_limit() -> None:
     loan_repository = Mock()
     user_repository = Mock()
     book_repository = Mock()
+    reservation_service = Mock()
 
     user = SimpleNamespace(id=1)
     book = SimpleNamespace(id=1, available_copies=1)
@@ -69,6 +70,7 @@ def test_loan_service_create_loan_raises_when_user_reaches_limit() -> None:
         loan_repository=loan_repository,
         user_repository=user_repository,
         book_repository=book_repository,
+        reservation_service=reservation_service,
     )
 
     payload = LoanCreate(user_id=1, book_id=1)
@@ -84,6 +86,7 @@ def test_loan_service_create_loan_raises_when_book_is_unavailable() -> None:
     loan_repository = Mock()
     user_repository = Mock()
     book_repository = Mock()
+    reservation_service = Mock()
 
     user = SimpleNamespace(id=1)
     book = SimpleNamespace(id=1, available_copies=0)
@@ -96,6 +99,7 @@ def test_loan_service_create_loan_raises_when_book_is_unavailable() -> None:
         loan_repository=loan_repository,
         user_repository=user_repository,
         book_repository=book_repository,
+        reservation_service=reservation_service,
     )
 
     payload = LoanCreate(user_id=1, book_id=1)
@@ -111,6 +115,7 @@ def test_loan_service_return_loan_calculates_fine_and_marks_returned() -> None:
     loan_repository = Mock()
     user_repository = Mock()
     book_repository = Mock()
+    reservation_service = Mock()
 
     loan = SimpleNamespace(
         id=1,
@@ -141,6 +146,7 @@ def test_loan_service_return_loan_calculates_fine_and_marks_returned() -> None:
         loan_repository=loan_repository,
         user_repository=user_repository,
         book_repository=book_repository,
+        reservation_service=reservation_service,
     )
 
     service._utc_now = Mock(return_value=datetime(2026, 3, 3, 10, 0, 0))
@@ -160,10 +166,15 @@ def test_loan_service_return_loan_calculates_fine_and_marks_returned() -> None:
         fine_amount=Decimal("4.00"),
         status=LoanStatus.RETURNED.value,
     )
+
+    reservation_service.promote_next_waiting_reservation.assert_called_once_with(book.id)
+
+
 def test_loan_service_renew_loan_increases_due_date_and_renewal_count() -> None:
     loan_repository = Mock()
     user_repository = Mock()
     book_repository = Mock()
+    reservation_service = Mock()
 
     loan = SimpleNamespace(
         id=1,
@@ -191,6 +202,7 @@ def test_loan_service_renew_loan_increases_due_date_and_renewal_count() -> None:
         loan_repository=loan_repository,
         user_repository=user_repository,
         book_repository=book_repository,
+        reservation_service=reservation_service,
     )
 
     result = service.renew_loan(1)
@@ -209,6 +221,7 @@ def test_loan_service_renew_loan_raises_when_limit_reached() -> None:
     loan_repository = Mock()
     user_repository = Mock()
     book_repository = Mock()
+    reservation_service = Mock()
 
     loan = SimpleNamespace(
         id=1,
@@ -226,6 +239,7 @@ def test_loan_service_renew_loan_raises_when_limit_reached() -> None:
         loan_repository=loan_repository,
         user_repository=user_repository,
         book_repository=book_repository,
+        reservation_service=reservation_service,
     )
 
     with pytest.raises(BusinessRuleError, match="Loan renewal limit reached"):

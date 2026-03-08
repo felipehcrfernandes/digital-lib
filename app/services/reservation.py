@@ -105,11 +105,11 @@ class ReservationService:
         )
 
         return reservation
-
     def cancel_reservation(self, reservation_id: int) -> Reservation:
         self._refresh_expired_ready_for_pickup()
 
         reservation = self.get_reservation(reservation_id)
+        was_ready_for_pickup = reservation.status == ReservationStatus.READY_FOR_PICKUP.value
 
         if reservation.status in {
             ReservationStatus.CANCELLED.value,
@@ -134,7 +134,7 @@ class ReservationService:
             },
         )
 
-        if reservation.status == ReservationStatus.READY_FOR_PICKUP.value:
+        if was_ready_for_pickup:
             self._promote_next_waiting_reservation(updated_reservation.book_id)
 
         return updated_reservation

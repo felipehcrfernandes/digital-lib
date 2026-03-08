@@ -12,6 +12,7 @@ Implemented so far:
 - Book catalog management
 - Loan creation and return flow
 - Loan renewal flow
+- Book reservation flow
 - Loan history per user
 - Active and overdue loan listing
 - Book availability checks
@@ -151,6 +152,19 @@ digital-lib/
 - `renewal_count`
 - `created_at`
 
+### Reservation
+
+- `id`
+- `user_id`
+- `book_id`
+- `status`
+- `created_at`
+- `available_at`
+- `expires_at`
+- `fulfilled_at`
+- `cancelled_at`
+- `expired_at`
+
 ## Main Business Rules
 
 - Standard loan period: 14 days
@@ -163,6 +177,12 @@ digital-lib/
 - Returned loans cannot be renewed
 - Overdue loans cannot be renewed
 - Renewal extends the current due date by 14 days
+- Reservations can only be created when a book has no available copies
+- A user cannot keep more than one active reservation for the same book
+- Reservation queue order is based on `created_at`, with `id` as a deterministic tie-breaker
+- When a copy becomes available, the next reservation is promoted to `READY_FOR_PICKUP`
+- A promoted reservation has a pickup window of 2 days
+- Cancelling or expiring a `READY_FOR_PICKUP` reservation promotes the next waiting reservation automatically
 - `available_copies` cannot be greater than `total_copies`
 - ISBN is optional, but unique when provided
 
@@ -187,6 +207,42 @@ The chosen statuses are:
 - `RETURNED`
 
 This is the minimum useful set needed to represent the loan lifecycle required by the case.
+
+### Reservation as a First-Class Entity
+
+Reservation was modeled as its own entity because waiting for a book has its own lifecycle and business rules, separate from both catalog management and loans.
+
+Key states:
+
+- `WAITING`
+- `READY_FOR_PICKUP`
+- `FULFILLED`
+- `CANCELLED`
+- `EXPIRED`
+
+This made it possible to represent queue position, temporary pickup priority, explicit expiration, and clean automatic promotion of the next user in line.
+
+### Reservation Promotion in the Service Layer
+
+Queue promotion is handled in the service layer rather than in the router or repository.
+
+- the router only exposes reservation actions
+- the repository only queries and persists reservation data
+- the service decides when a reservation becomes `READY_FOR_PICKUP`, expires, or promotes the next user
+
+This keeps the reservation workflow as domain logic instead of treating it as a manual operational concern.
+
+### Reservation Design Rationale
+
+The reservation feature intentionally adds more domain structure than a simple waiting list because availability alone is not enough to model the full user experience.
+
+- `Reservation` is separate from `Loan` because waiting for a copy and borrowing a copy are different business events
+- queue position is derived from `created_at` and `id` instead of being stored explicitly, which avoids redundant mutable state
+- `READY_FOR_PICKUP` exists to model temporary priority after a copy becomes available
+- the 2-day pickup window prevents a reservation from blocking inventory indefinitely
+- automatic promotion after return, cancellation, or expiration keeps the queue fair without relying on manual intervention
+
+This design keeps the workflow easy to explain in a review while still showing production-minded reasoning around lifecycle, fairness, and state transitions.
 
 ### Author as a String
 
@@ -233,6 +289,19 @@ This was a deliberate scope decision: the internal layers were prepared for futu
 - List active loans
 - List overdue loans
 - List loan history by user
+
+### Reservations
+
+- Create reservation for an unavailable book
+- Get reservation by ID
+- List all reservations
+- List reservations by user
+- List waiting reservations for a book
+- Cancel reservation
+- Fulfill reservation
+- Automatic queue promotion after loan return
+- Automatic queue promotion after reservation cancellation
+- Automatic queue promotion after reservation expiration
 
 ### API Quality
 
@@ -322,6 +391,60 @@ No request body required.
 
 No request body required.
 
+### Create a reservation
+
+`POST /reservations`
+
+```json
+{
+  "user_id": 2,
+  "book_id": 1
+}
+```
+
+Reservations are only allowed when the book has no available copies.
+
+When the book becomes available again, the first waiting reservation is promoted automatically to `READY_FOR_PICKUP` for 2 days.
+
+### Get a reservation
+
+`GET /reservations/1`
+
+Example response after automatic promotion:
+
+```json
+{
+  "id": 1,
+  "user_id": 2,
+  "book_id": 1,
+  "status": "READY_FOR_PICKUP",
+  "created_at": "2026-03-08T10:00:00",
+  "available_at": "2026-03-10T09:30:00",
+  "expires_at": "2026-03-12T09:30:00",
+  "fulfilled_at": null,
+  "cancelled_at": null,
+  "expired_at": null
+}
+```
+
+### List reservations by user
+
+`GET /reservations/users/2?skip=0&limit=10`
+
+This returns the standard paginated response structure used across all list endpoints.
+
+### Cancel a reservation
+
+`POST /reservations/1/cancel`
+
+No request body required. Cancelling a reservation that is already `READY_FOR_PICKUP` automatically promotes the next waiting reservation, if one exists.
+
+### Fulfill a reservation
+
+`POST /reservations/1/fulfill`
+
+No request body required. This is intended for reservations currently in `READY_FOR_PICKUP`.
+
 ### Paginated list example
 
 `GET /books?skip=0&limit=10`
@@ -367,6 +490,11 @@ Examples of logged events:
 - `loan_renewed`
 - `loan_returned`
 - `loan_overdue`
+- `reservation_created`
+- `reservation_ready_for_pickup`
+- `reservation_cancelled`
+- `reservation_fulfilled`
+- `reservation_expired`
 
 This helps with debugging, traceability, and future observability improvements.
 
@@ -381,6 +509,9 @@ Initial protection was added to write operations such as:
 - `POST /loans`
 - `POST /loans/{loan_id}/renew`
 - `POST /loans/{loan_id}/return`
+- `POST /reservations`
+- `POST /reservations/{reservation_id}/cancel`
+- `POST /reservations/{reservation_id}/fulfill`
 
 This was a deliberate choice to protect the endpoints that create or change system state while keeping read endpoints unrestricted initially for simplicity and usability.
 
@@ -413,6 +544,11 @@ Current coverage includes:
 - returned loan renewal rejection
 - maximum active loan rule
 - unavailable book rule
+- reservation creation for unavailable books
+- duplicate reservation prevention
+- automatic promotion to `READY_FOR_PICKUP` after book return
+- automatic promotion after cancelling a ready reservation
+- reservation pagination by user
 - loan pagination and user loan history pagination
 - isolated service-level rule validation with mocks
 
@@ -439,6 +575,7 @@ Examples:
 ## Notes
 
 - Date/time handling is currently kept simple for the SQLite-based version of the project
-- Schema changes currently require recreating the local SQLite database because the project uses metadata creation instead of migrations
+- During development, schema changes may require recreating the local SQLite database because the project uses metadata creation instead of migrations
+- In a production-ready environment, schema evolution should be handled with proper database migrations such as Alembic instead of deleting and recreating the database
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
 - Docker and Postman export are planned as next steps
