@@ -148,6 +148,7 @@ digital-lib/
 - `return_date`
 - `fine_amount`
 - `status`
+- `renewal_count`
 - `created_at`
 
 ## Main Business Rules
