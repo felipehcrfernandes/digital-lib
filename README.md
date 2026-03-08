@@ -328,6 +328,12 @@ This was a deliberate scope decision: the internal layers were prepared for futu
 - UX adapted for a non-technical operator using Brazilian Portuguese
 - Security-oriented bounded tool set and environment-based provider configuration
 
+### Frontend
+
+The frontend added for the chat assistant is intentionally small and self-contained. It exists mainly as a simple interaction layer for the LLM-assisted flow, while the backend remains the main focus of the project.
+
+The visual style uses a pixel art, old RPG-inspired interface. This was a deliberate creative choice to add some personality and fun to the project. It should be understood as a playful presentation layer rather than a production-oriented design system.
+
 ## Installation
 
 ### Requirements
