@@ -1,0 +1,606 @@
+{
+  "info": {
+    "_postman_id": "4c6e3c4d-9e1c-4a9e-9e57-7f7d4c9f7c21",
+    "name": "Digital Library API",
+    "description": "Collection covering the main Digital Library API flows: health, users, books, loans, reservations, and a few important business-rule failures.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "secondUserId",
+      "value": ""
+    },
+    {
+      "key": "bookId",
+      "value": ""
+    },
+    {
+      "key": "loanId",
+      "value": ""
+    },
+    {
+      "key": "reservationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Get Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('health payload has database and metrics', function () {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.status).to.eql('ok');",
+                  "    pm.expect(data).to.have.property('database');",
+                  "    pm.expect(data).to.have.property('metrics');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Checks application health, database connectivity, and lightweight business counters."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('userId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Felipe Silva\",\n  \"email\": \"felipe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create User 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('secondUserId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Souza\",\n  \"email\": \"maria@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Books",
+      "item": [
+        {
+          "name": "Create Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('bookId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Clean Architecture\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780134494166\",\n  \"published_year\": 2017,\n  \"total_copies\": 1,\n  \"available_copies\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check Book Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books/{{bookId}}/availability",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                "{{bookId}}",
+                "availability"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loans And Reservations Flow",
+      "item": [
+        {
+          "name": "Create Loan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('loanId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"book_id\": {{bookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/loans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Reservation For Unavailable Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('reservationId', data.id);",
+                  "pm.test('reservation starts in WAITING', function () {",
+                  "    pm.expect(data.status).to.eql('WAITING');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{secondUserId}},\n  \"book_id\": {{bookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reservation Before Return",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Renew Loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/loans/{{loanId}}/renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans",
+                "{{loanId}}",
+                "renew"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Return Loan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/loans/{{loanId}}/return",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans",
+                "{{loanId}}",
+                "return"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reservation After Automatic Promotion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const data = pm.response.json();",
+                  "pm.test('reservation is ready for pickup', function () {",
+                  "    pm.expect(data.status).to.eql('READY_FOR_PICKUP');",
+                  "    pm.expect(data.available_at).to.not.eql(null);",
+                  "    pm.expect(data.expires_at).to.not.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Reservations By User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/users/{{secondUserId}}?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "users",
+                "{{secondUserId}}"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fulfill Reservation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}/fulfill",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "fulfill"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Rule Checks",
+      "item": [
+        {
+          "name": "Reject Duplicate User Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Felipe Silva\",\n  \"email\": \"felipe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Reservation For Available Book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{secondUserId}},\n  \"book_id\": {{bookId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            },
+            "description": "Run this after the book has become available again to verify the reservation rule."
+          }
+        }
+      ]
+    }
+  ]
+}

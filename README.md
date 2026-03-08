@@ -321,18 +321,42 @@ This was a deliberate scope decision: the internal layers were prepared for futu
 ### Requirements
 
 - Python 3.11+
-- `uv` installed
+- `uv` installed for the primary setup flow
+
+### Dependency Source Of Truth
+
+The project is primarily managed with `pyproject.toml` and `uv.lock`.
+
+`requirements.txt` is included only as a compatibility helper for reviewers who prefer plain `pip`. It should be treated as a convenience export, not as the main dependency definition.
 
 ### Install dependencies
+
+Primary setup with `uv`:
 
 ```bash
 uv sync
 ```
 
+Alternative reviewer setup with `pip`:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
 ## Running the Application
+
+With `uv`:
 
 ```bash
 uv run python main.py
+```
+
+With a `pip`-based virtual environment:
+
+```bash
+python main.py
 ```
 
 Application URLs:
@@ -583,6 +607,7 @@ Current coverage includes:
 - reservation pagination by user
 - loan pagination and user loan history pagination
 - isolated service-level rule validation with mocks
+- a Postman collection covering the main happy paths and selected business-rule failures
 
 ### Run tests
 
