@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, Query, Request, status
-from app.limiter import limiter
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.limiter import limiter
 from app.repositories.book import BookRepository
 from app.repositories.loan import LoanRepository
+from app.repositories.reservation import ReservationRepository
 from app.repositories.user import UserRepository
 from app.schemas.common import PaginatedResponse
 from app.schemas.loan import LoanCreate, LoanResponse
 from app.services.loan import LoanService
+from app.services.reservation import ReservationService
 
 router = APIRouter(prefix="/loans", tags=["loans"])
 
@@ -17,10 +19,19 @@ def get_loan_service(db: Session = Depends(get_db)) -> LoanService:
     loan_repository = LoanRepository(db)
     user_repository = UserRepository(db)
     book_repository = BookRepository(db)
+    reservation_repository = ReservationRepository(db)
+
+    reservation_service = ReservationService(
+        reservation_repository=reservation_repository,
+        user_repository=user_repository,
+        book_repository=book_repository,
+    )
+
     return LoanService(
         loan_repository=loan_repository,
         user_repository=user_repository,
         book_repository=book_repository,
+        reservation_service=reservation_service,
     )
 
 
@@ -67,8 +78,13 @@ def create_loan(
 
 @router.post("/{loan_id}/return", response_model=LoanResponse)
 @limiter.limit("20/minute")
-def return_loan(request: Request, loan_id: int, service: LoanService = Depends(get_loan_service)) -> LoanResponse:
+def return_loan(
+    request: Request,
+    loan_id: int,
+    service: LoanService = Depends(get_loan_service),
+) -> LoanResponse:
     return service.return_loan(loan_id)
+
 
 @router.post("/{loan_id}/renew", response_model=LoanResponse)
 @limiter.limit("10/minute")

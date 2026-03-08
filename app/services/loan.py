@@ -12,6 +12,7 @@ from app.repositories.loan import LoanRepository
 from app.repositories.user import UserRepository
 from app.schemas.loan import LoanCreate, LoanResponse
 from app.schemas.common import PaginatedResponse
+from app.services.reservation import ReservationService
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +27,12 @@ class LoanService:
         loan_repository: LoanRepository,
         user_repository: UserRepository,
         book_repository: BookRepository,
+        reservation_service: ReservationService,
     ) -> None:
         self.loan_repository = loan_repository
         self.user_repository = user_repository
         self.book_repository = book_repository
+        self.reservation_service = reservation_service
 
     def list_loans(self, *, skip: int = 0, limit: int = 10) -> PaginatedResponse[LoanResponse]:
         self._refresh_overdue_loans()
@@ -141,6 +144,8 @@ class LoanService:
             status=LoanStatus.RETURNED.value,
         )
 
+        promoted_reservation = self.reservation_service.promote_next_waiting_reservation(book.id)
+
         logger.info(
             "loan returned",
             extra={
@@ -149,6 +154,7 @@ class LoanService:
                 "user_id": updated_loan.user_id,
                 "book_id": updated_loan.book_id,
                 "fine_amount": updated_loan.fine_amount,
+                "promoted_reservation_id": promoted_reservation.id if promoted_reservation else None,
             },
         )
 
