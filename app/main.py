@@ -4,7 +4,7 @@ import time
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -12,9 +12,10 @@ from app.limiter import limiter
 
 from app.config import get_settings
 from app.logging_config import configure_logging
-from app.database import Base, SessionLocal, engine
+from app.database import Base, engine, get_db
 from app.exceptions import BusinessRuleError, ConflictError, NotFoundError
 from app.routers.book import router as book_router
+from app.routers.chat import router as chat_router
 from app.routers.loan import router as loan_router
 from app.routers.user import router as user_router
 from app.routers.reservation import router as reservation_router
@@ -34,13 +35,9 @@ async def lifespan(app: FastAPI):
     yield
 
 
-def get_health_service() -> HealthService:
-    db: Session = SessionLocal()
-    try:
-        repository = HealthRepository(db)
-        return HealthService(repository, settings)
-    finally:
-        db.close()
+def get_health_service(db: Session = Depends(get_db)) -> HealthService:
+    repository = HealthRepository(db)
+    return HealthService(repository, settings)
 
 def create_application() -> FastAPI:
     app = FastAPI(
@@ -93,14 +90,14 @@ def create_application() -> FastAPI:
         )
 
     @app.get("/health", response_model=HealthResponse, tags=["health"])
-    def health_check() -> HealthResponse:
-        service = get_health_service()
+    def health_check(service: HealthService = Depends(get_health_service)) -> HealthResponse:
         return service.get_health()
 
     app.include_router(user_router)
     app.include_router(book_router)
     app.include_router(loan_router)
     app.include_router(reservation_router)
+    app.include_router(chat_router)
 
     return app
 

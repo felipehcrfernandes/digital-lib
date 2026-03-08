@@ -8,9 +8,11 @@ import pytest
 from app.exceptions import BusinessRuleError, ConflictError
 from app.models.loan import LoanStatus
 from app.schemas.book import BookCreate
+from app.schemas.chat import ChatRequest
 from app.schemas.loan import LoanCreate
 from app.schemas.user import UserCreate
 from app.services.book import BookService
+from app.services.chat import ChatService
 from app.services.loan import LoanService
 from app.services.user import UserService
 
@@ -246,3 +248,74 @@ def test_loan_service_renew_loan_raises_when_limit_reached() -> None:
         service.renew_loan(1)
 
     loan_repository.update.assert_not_called()
+
+
+def test_chat_service_returns_plain_reply_without_tool_call() -> None:
+    llm_client = Mock()
+    llm_client.create_response.return_value = {
+        "content": "Aqui estao os **usuários** cadastrados.",
+        "tool_calls": [],
+    }
+
+    service = ChatService(
+        llm_client=llm_client,
+        user_service=Mock(),
+        book_service=Mock(),
+        loan_service=Mock(),
+        reservation_service=Mock(),
+    )
+
+    result = service.chat(ChatRequest(message="hi", history=[]))
+
+    assert result.reply == "Aqui estao os usuários cadastrados."
+    assert result.action is None
+
+
+def test_chat_service_executes_create_user_tool_and_returns_action_result() -> None:
+    llm_client = Mock()
+    llm_client.create_response.side_effect = [
+        {
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "function": {
+                        "name": "create_user",
+                        "arguments": '{"name":"Ana","email":"ana@example.com"}',
+                    },
+                }
+            ],
+        },
+        {
+            "content": "A usuaria **Ana** foi criada com sucesso.",
+            "tool_calls": [],
+        },
+    ]
+
+    user_service = Mock()
+    user_service.create_user.return_value = SimpleNamespace(
+        id=1,
+        name="Ana",
+        email="ana@example.com",
+        is_active=True,
+        created_at=datetime(2026, 3, 8, 18, 0, 0),
+        updated_at=datetime(2026, 3, 8, 18, 0, 0),
+    )
+
+    service = ChatService(
+        llm_client=llm_client,
+        user_service=user_service,
+        book_service=Mock(),
+        loan_service=Mock(),
+        reservation_service=Mock(),
+    )
+
+    result = service.chat(ChatRequest(message="create Ana", history=[]))
+
+    assert result.reply == "A usuaria Ana foi criada com sucesso."
+    assert result.action is not None
+    assert result.action.tool_name == "create_user"
+    assert result.action.success is True
+    assert result.action.data is not None
+    assert result.action.data["email"] == "ana@example.com"
+    user_service.create_user.assert_called_once()

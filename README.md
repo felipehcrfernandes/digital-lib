@@ -14,6 +14,7 @@ Implemented so far:
 - Loan renewal flow
 - Book reservation flow
 - Richer health endpoint with database check and lightweight metrics
+- Simple LLM-powered chat assistant UI for library operations
 - Loan history per user
 - Active and overdue loan listing
 - Book availability checks
@@ -28,7 +29,6 @@ Implemented so far:
 Planned next steps:
 
 - Docker setup
-- Postman collection
 - Final delivery polish
 
 ## Tech Stack
@@ -103,13 +103,16 @@ digital-lib/
 │   ├── config.py
 │   ├── database.py
 │   ├── exceptions.py
+│   ├── llm/
 │   ├── logging_config.py
 │   ├── main.py
 │   ├── models/
 │   ├── repositories/
 │   ├── routers/
 │   ├── schemas/
+│   ├── static/
 │   └── services/
+├── LLM-DETAILS.md
 ├── main.py
 ├── pyproject.toml
 ├── tests/
@@ -316,12 +319,25 @@ This was a deliberate scope decision: the internal layers were prepared for futu
 - Automated unit and integration tests with pytest
 - Rate limiting on state-changing endpoints
 
+### Chat Assistant
+
+- Simple browser chat UI served by FastAPI at `GET /chat/ui`
+- Additive chat endpoint at `POST /chat`
+- OpenAI-compatible provider integration via environment variables
+- Server-side tool execution mapped to the existing service layer
+- UX adapted for a non-technical operator using Brazilian Portuguese
+- Security-oriented bounded tool set and environment-based provider configuration
+
 ## Installation
 
 ### Requirements
 
 - Python 3.11+
 - `uv` installed for the primary setup flow
+
+Optional for chat usage:
+
+- an OpenAI-compatible API key
 
 ### Dependency Source Of Truth
 
@@ -345,6 +361,22 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+### Optional chat configuration
+
+The REST API works without any LLM configuration.
+
+The chat assistant requires a root `.env` file with values like:
+
+```env
+LLM_ENABLED=true
+LLM_API_KEY=your_api_key
+LLM_MODEL=gpt-4o-mini
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_TIMEOUT_SECONDS=30
+```
+
+If `LLM_ENABLED` is false or the provider is not configured correctly, the core API still runs normally and the chat feature degrades gracefully.
+
 ## Running the Application
 
 With `uv`:
@@ -365,6 +397,28 @@ Application URLs:
 - Swagger UI: `http://127.0.0.1:8000/docs`
 - OpenAPI JSON: `http://127.0.0.1:8000/openapi.json`
 - Health check: `http://127.0.0.1:8000/health`
+- Chat UI: `http://127.0.0.1:8000/chat/ui`
+
+### Run without chat
+
+If you only want to review the API:
+
+1. Install dependencies
+2. Start the application
+3. Open `http://127.0.0.1:8000/docs`
+
+No LLM configuration is required for this flow.
+
+### Run with chat
+
+If you want to review the LLM assistant too:
+
+1. Install dependencies
+2. Create the root `.env` file with the LLM variables
+3. Start the application
+4. Open `http://127.0.0.1:8000/chat/ui`
+
+This keeps the main backend review path simple while still allowing the interview/demo path to include the assistant.
 
 ## Example API Usage
 
@@ -501,6 +555,50 @@ Example response:
 
 The endpoint is intentionally simple and reviewer-friendly: it confirms database connectivity and exposes a small set of business-relevant counters without introducing external monitoring infrastructure.
 
+### Chat assistant
+
+`POST /chat`
+
+`GET /chat/ui`
+
+The browser chat interface is intended as the easiest way to demonstrate the feature during review.
+
+The backend endpoint remains available for direct testing and integration.
+
+Example request:
+
+```json
+{
+  "message": "Create a user named Ana with email ana@example.com",
+  "history": []
+}
+```
+
+Example response shape:
+
+```json
+{
+  "reply": "I created Ana successfully and she is now available in the library system.",
+  "action": {
+    "tool_name": "create_user",
+    "success": true,
+    "data": {
+      "id": 1,
+      "name": "Ana",
+      "email": "ana@example.com",
+      "is_active": true,
+      "created_at": "2026-03-08T18:00:00",
+      "updated_at": "2026-03-08T18:00:00"
+    },
+    "error": null
+  }
+}
+```
+
+The chat assistant is intentionally additive. It does not replace the existing REST API and does not bypass business rules. When the model chooses a tool, the server executes the corresponding existing service-layer operation, so validations and constraints stay centralized in the same backend logic as the normal endpoints.
+
+For a deeper explanation of the architecture, tool design, security decisions, and future improvements, see [`LLM-DETAILS.md`](LLM-DETAILS.md).
+
 ### Paginated list example
 
 `GET /books?skip=0&limit=10`
@@ -568,6 +666,7 @@ Initial protection was added to write operations such as:
 - `POST /reservations`
 - `POST /reservations/{reservation_id}/cancel`
 - `POST /reservations/{reservation_id}/fulfill`
+- `POST /chat`
 
 This was a deliberate choice to protect the endpoints that create or change system state while keeping read endpoints unrestricted initially for simplicity and usability.
 
@@ -607,7 +706,7 @@ Current coverage includes:
 - reservation pagination by user
 - loan pagination and user loan history pagination
 - isolated service-level rule validation with mocks
-- a Postman collection covering the main happy paths and selected business-rule failures
+- a Postman collection covering the main endpoints, main happy paths, and selected business-rule failures, without trying to mirror every implemented endpoint
 
 ### Run tests
 
@@ -635,4 +734,5 @@ Examples:
 - During development, schema changes may require recreating the local SQLite database because the project uses metadata creation instead of migrations
 - In a production-ready environment, schema evolution should be handled with proper database migrations such as Alembic instead of deleting and recreating the database
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
-- Docker and Postman export are planned as next steps
+- Docker is still a likely next step for reviewer convenience
+- Streaming chat responses, tighter response control, and richer UI polish are possible future improvements, but the current implementation intentionally stays simple to demonstrate the integration pattern clearly

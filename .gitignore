@@ -11,5 +11,6 @@ wheels/
 
 # Others
 
+.env
 description.pdf
 .cursor

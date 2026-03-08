@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca do Felipe</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+    }
+
+    .header p {
+      margin: 0;
+      color: #d1d5db;
+    }
+
+    .chat-shell {
+      border: 1px solid #374151;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #1f2937;
+    }
+
+    .messages {
+      min-height: 420px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      padding: 12px 14px;
+      border-radius: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      background: #2563eb;
+      align-self: flex-end;
+      max-width: 80%;
+    }
+
+    .message.assistant {
+      background: #374151;
+      align-self: flex-start;
+      max-width: 85%;
+    }
+
+    .message.thinking {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+    }
+
+    .thinking-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 14px;
+    }
+
+    .thinking-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #d1d5db;
+      opacity: 0.35;
+      animation: thinkingPulse 1.2s infinite ease-in-out;
+    }
+
+    .thinking-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .thinking-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes thinkingPulse {
+      0%, 80%, 100% {
+        opacity: 0.35;
+        transform: translateY(0);
+      }
+
+      40% {
+        opacity: 1;
+        transform: translateY(-2px);
+      }
+    }
+
+    .composer {
+      border-top: 1px solid #374151;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      background: #111827;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 72px;
+      max-height: 180px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #4b5563;
+      background: #1f2937;
+      color: #f9fafb;
+      font: inherit;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 0 18px;
+      background: #10b981;
+      color: #052e16;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .hint {
+      margin-top: 12px;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="header">
+      <h1>Biblioteca do Felipe</h1>
+      <p>Converse com o assistente para criar usuários e livros, consultar disponibilidade, gerenciar empréstimos e reservas.</p>
+    </section>
+
+    <section class="chat-shell">
+      <div id="messages" class="messages"></div>
+
+      <form id="chat-form" class="composer">
+        <textarea id="message-input" placeholder="Exemplo: crie uma usuária chamada Ana com e-mail ana@example.com"></textarea>
+        <button id="send-button" type="submit">Enviar</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("message-input");
+    const messagesEl = document.getElementById("messages");
+    const sendButton = document.getElementById("send-button");
+
+    const history = [];
+
+    function addMessage(role, content) {
+      const wrapper = document.createElement("div");
+      wrapper.className = `message ${role}`;
+      wrapper.textContent = content;
+
+      messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addThinkingMessage() {
+      const wrapper = document.createElement("div");
+      wrapper.className = "message assistant thinking";
+      wrapper.id = "thinking-message";
+      wrapper.setAttribute("aria-label", "Assistente pensando");
+
+      const dots = document.createElement("div");
+      dots.className = "thinking-dots";
+      dots.innerHTML = "<span></span><span></span><span></span>";
+
+      wrapper.appendChild(dots);
+      messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function removeThinkingMessage() {
+      const thinkingMessage = document.getElementById("thinking-message");
+      if (thinkingMessage) {
+        thinkingMessage.remove();
+      }
+    }
+
+    addMessage(
+      "assistant",
+      "Olá. Posso ajudar com cadastro de usuários, livros, empréstimos, devoluções, renovações e reservas."
+    );
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const message = input.value.trim();
+      if (!message) {
+        return;
+      }
+
+      sendButton.disabled = true;
+      addMessage("user", message);
+      history.push({ role: "user", content: message });
+      input.value = "";
+      addThinkingMessage();
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            history: history.slice(0, -1),
+          }),
+        });
+
+        const data = await response.json();
+        removeThinkingMessage();
+        addMessage("assistant", data.reply);
+        history.push({ role: "assistant", content: data.reply });
+      } catch (error) {
+        removeThinkingMessage();
+        addMessage(
+          "assistant",
+          "Verifique se a API está em execução."
+        );
+      } finally {
+        sendButton.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>

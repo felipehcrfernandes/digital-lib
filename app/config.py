@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = True
     database_url: str = f"sqlite:///{Path('digital_library.db').resolve()}"
+    llm_enabled: bool = False
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str = ""
+    llm_model: str = "gpt-4o-mini"
+    llm_timeout_seconds: float = 30.0
 
     model_config = SettingsConfigDict(
         env_file=".env",
