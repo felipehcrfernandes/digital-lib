@@ -37,8 +37,17 @@ class JsonFormatter(logging.Formatter):
         if hasattr(record, "loan_id"):
             log_payload["loan_id"] = record.loan_id
 
+        if hasattr(record, "reservation_id"):
+            log_payload["reservation_id"] = record.reservation_id
+
+        if hasattr(record, "promoted_reservation_id"):
+            log_payload["promoted_reservation_id"] = record.promoted_reservation_id
+
         if hasattr(record, "fine_amount"):
             log_payload["fine_amount"] = str(record.fine_amount)
+
+        if hasattr(record, "expires_at"):
+            log_payload["expires_at"] = str(record.expires_at)
 
         return json.dumps(log_payload, ensure_ascii=True)
 
