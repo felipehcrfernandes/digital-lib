@@ -2,20 +2,18 @@
 
 This document explains the design of the LLM-powered chat assistant added to the Digital Library API.
 
-The main objective of this implementation is not to build a production-grade AI agent. The goal is to demonstrate practical knowledge of LLM integration, tool-based orchestration, UX adaptation for a non-technical user, and safe coexistence with an existing layered backend.
+The current implementation is intentionally simple. It focuses on a clear integration pattern for LLM-assisted operations, tool-based orchestration, UX adaptation for a non-technical user, and safe coexistence with the existing layered backend.
 
-## Why This Was Added
+## Purpose
 
-The original case explicitly left room for creativity and extra implementation depth.
-
-This chat assistant was added as a lightweight differential to show:
+This chat assistant was added as a lightweight extension to the existing API in order to:
 
 - familiarity with LLM-driven UX
 - ability to integrate an LLM without breaking the existing REST API
 - understanding of tool-based orchestration instead of direct database access
 - awareness of security and operational constraints around LLM usage
 
-The implementation is intentionally basic and interview-friendly. It favors clarity and separation of concerns over advanced agent autonomy.
+The implementation favors clarity and separation of concerns over advanced agent autonomy.
 
 ## High-Level Design
 
@@ -85,9 +83,8 @@ This is a deliberately simple frontend.
 
 It was implemented as a static page served by FastAPI because:
 
-- it is enough to demonstrate the feature
+- it keeps the feature lightweight
 - it avoids adding a large frontend framework late in the project
-- it keeps the repo easy to run for an interviewer
 - it allows the backend to remain the main focus
 
 The page includes:
@@ -132,15 +129,14 @@ The current implementation uses a two-step tool flow:
 
 This approach is simple and explicit, but it can increase latency because tool-assisted answers may require two LLM calls.
 
-## Why This Design Was Chosen
+## Design Rationale
 
-The design was chosen to preserve the project’s existing architecture and interview reasoning:
+The design was chosen to preserve the project’s existing architecture:
 
 - the REST API remains authoritative
 - domain rules remain in the existing services
 - the LLM does not replace the business layer
-- the feature is easy to explain in an interview
-- the implementation is small enough to review quickly
+- the implementation remains small and maintainable
 
 This is intentionally not a fully autonomous agent. It is a guided assistant on top of a conventional backend.
 
@@ -229,7 +225,7 @@ Known limitations:
 - there is no audit trail specific to AI-originated actions yet
 - response precision still depends partly on prompt quality and model behavior
 
-These limitations are acceptable for the purpose of this case because the primary goal was to demonstrate the integration pattern, not to over-engineer an AI subsystem.
+These limitations are acceptable for the current scope because the primary goal was to keep the integration pattern clear without over-engineering an AI subsystem.
 
 ## Future Improvements
 
@@ -277,12 +273,11 @@ Future hardening ideas:
 - audit logging for AI-triggered operations
 - role-based access control if the project later gains authentication
 
-## Interview Summary
+## Summary
 
-If discussed in an interview, the implementation can be summarized like this:
+The LLM integration follows a simple and controlled design:
 
 - the LLM was added as an additive orchestration layer, not as a replacement for the backend
 - tool execution is bounded and server-side
 - business rules remain in the existing service layer
-- the implementation intentionally favors clarity, safety, and explainability over sophistication
-- the feature demonstrates practical LLM integration while keeping the project easy to run and review
+- the implementation favors clarity, safety, and explainability over sophistication

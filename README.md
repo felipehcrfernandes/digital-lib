@@ -72,7 +72,7 @@ Reasoning:
 
 - simpler models and foreign keys
 - easier manual testing in Swagger/Postman
-- easier explanation during the interview
+- easier explanation of data relationships and examples
 - enough for a single-service case with no distributed ID generation needs
 
 ## Architecture
@@ -343,7 +343,7 @@ Optional for chat usage:
 
 The project is primarily managed with `pyproject.toml` and `uv.lock`.
 
-`requirements.txt` is included only as a compatibility helper for reviewers who prefer plain `pip`. It should be treated as a convenience export, not as the main dependency definition.
+`requirements.txt` is included only as a compatibility helper for users who prefer plain `pip`. It should be treated as a convenience export, not as the main dependency definition.
 
 ### Install dependencies
 
@@ -353,7 +353,7 @@ Primary setup with `uv`:
 uv sync
 ```
 
-Alternative reviewer setup with `pip`:
+Alternative setup with `pip`:
 
 ```bash
 python -m venv .venv
@@ -418,7 +418,7 @@ If you want to review the LLM assistant too:
 3. Start the application
 4. Open `http://127.0.0.1:8000/chat/ui`
 
-This keeps the main backend review path simple while still allowing the interview/demo path to include the assistant.
+This keeps the main backend usage path simple while still allowing the chat assistant to be enabled when needed.
 
 ## Example API Usage
 
@@ -553,7 +553,7 @@ Example response:
 }
 ```
 
-The endpoint is intentionally simple and reviewer-friendly: it confirms database connectivity and exposes a small set of business-relevant counters without introducing external monitoring infrastructure.
+The endpoint is intentionally simple: it confirms database connectivity and exposes a small set of business-relevant counters without introducing external monitoring infrastructure.
 
 ### Chat assistant
 
@@ -561,7 +561,7 @@ The endpoint is intentionally simple and reviewer-friendly: it confirms database
 
 `GET /chat/ui`
 
-The browser chat interface is intended as the easiest way to demonstrate the feature during review.
+The browser chat interface is the simplest way to use the assistant in the application.
 
 The backend endpoint remains available for direct testing and integration.
 
@@ -734,5 +734,5 @@ Examples:
 - During development, schema changes may require recreating the local SQLite database because the project uses metadata creation instead of migrations
 - In a production-ready environment, schema evolution should be handled with proper database migrations such as Alembic instead of deleting and recreating the database
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
-- Docker is still a likely next step for reviewer convenience
+- Docker is still a likely next step for easier environment setup
 - Streaming chat responses, tighter response control, and richer UI polish are possible future improvements, but the current implementation intentionally stays simple to demonstrate the integration pattern clearly
