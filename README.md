@@ -28,8 +28,8 @@ Implemented so far:
 
 Planned next steps:
 
-- Docker setup
-- Final delivery polish
+- Docker setup 
+
 
 ## Tech Stack
 
@@ -37,6 +37,7 @@ Planned next steps:
 - FastAPI
 - SQLAlchemy 2.0
 - Pydantic v2
+- SlowAPI
 - SQLite
 - Uvicorn
 - uv
@@ -72,7 +73,7 @@ Reasoning:
 
 - simpler models and foreign keys
 - easier manual testing in Swagger/Postman
-- easier explanation of data relationships and examples
+- compact and efficient key representation for a small relational SQLite-backed service
 - enough for a single-service case with no distributed ID generation needs
 
 ## Architecture
