@@ -9,7 +9,7 @@ The current implementation is intentionally simple. It focuses on a clear integr
 This chat assistant was added as a lightweight extension to the existing API in order to:
 
 - familiarity with LLM-driven UX
-- ability to integrate an LLM without breaking the existing REST API
+- ability to integrate an LLM with existing REST API
 - understanding of tool-based orchestration instead of direct database access
 - awareness of security and operational constraints around LLM usage
 

@@ -736,3 +736,17 @@ Examples:
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
 - Docker is still a likely next step for easier environment setup
 - Streaming chat responses, tighter response control, and richer UI polish are possible future improvements, but the current implementation intentionally stays simple to demonstrate the integration pattern clearly
+
+## Screenshots
+
+![Screenshot 1](screenshots/1.png)
+
+![Screenshot 2](screenshots/2.png)
+
+![Screenshot 3](screenshots/3.png)
+
+![Screenshot 4](screenshots/4.png)
+
+![Screenshot 5](screenshots/5.png)
+
+![Screenshot 6](screenshots/6.png)

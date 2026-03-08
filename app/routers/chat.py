@@ -22,6 +22,7 @@ from app.services.user import UserService
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 CHAT_UI_FILE = Path(__file__).resolve().parents[1] / "static" / "chat.html"
+CHAT_BACKGROUND_FILE = Path(__file__).resolve().parents[1] / "static" / "background.png"
 
 
 def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
@@ -59,6 +60,11 @@ def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
 @router.get("/ui", include_in_schema=False)
 def get_chat_ui() -> FileResponse:
     return FileResponse(CHAT_UI_FILE)
+
+
+@router.get("/background", include_in_schema=False)
+def get_chat_background() -> FileResponse:
+    return FileResponse(CHAT_BACKGROUND_FILE)
 
 
 @router.post("", response_model=ChatResponse)
