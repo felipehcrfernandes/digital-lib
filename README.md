@@ -25,6 +25,7 @@ Implemented so far:
 - Automated unit and integration tests with pytest
 - Rate limiting on write endpoints
 - Automatic Swagger/OpenAPI documentation
+- A Postman collection covering the main reviewer flows, key happy paths, and selected business-rule failures; not every implemented endpoint is mirrored there because the remaining ones can be explored through the Swagger UI if needed
 
 
 ## Tech Stack
@@ -68,9 +69,9 @@ The API uses auto-increment integer IDs.
 Reasoning:
 
 - simpler models and foreign keys
-- easier manual testing in Swagger/Postman
 - compact and efficient key representation for a small relational SQLite-backed service
 - enough for a single-service case with no distributed ID generation needs
+- Avoid adding unnecessary complexity that could affect performance in more complex future queries.
 
 ## Architecture
 
@@ -709,7 +710,7 @@ Current coverage includes:
 - reservation pagination by user
 - loan pagination and user loan history pagination
 - isolated service-level rule validation with mocks
-- a Postman collection covering the main endpoints, main happy paths, and selected business-rule failures, without trying to mirror every implemented endpoint
+- a Postman collection covering the main endpoints, key happy paths, and selected business-rule failures, without trying to mirror every implemented endpoint, since the remaining ones can be tested in the Swagger UI if needed
 
 ### Run tests
 
