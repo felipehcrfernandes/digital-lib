@@ -26,10 +26,6 @@ Implemented so far:
 - Rate limiting on write endpoints
 - Automatic Swagger/OpenAPI documentation
 
-Planned next steps:
-
-- Docker setup 
-
 
 ## Tech Stack
 
@@ -743,6 +739,13 @@ Examples:
 - Transaction handling is currently repository-commit based for clarity; a future hardening step would move multi-entity transaction control into the service layer
 - Docker is a likely next step to provide a reproducible runtime environment, reduce machine-specific setup differences, and simplify future deployment and multi-service expansion.
 - Streaming chat responses, tighter response control, and richer UI polish are possible future improvements, but the current implementation intentionally stays simple to demonstrate the integration pattern clearly
+
+## Future Implementations
+
+- Cache layer: a cache for frequent read operations could be added with an in-memory strategy or Redis to reduce repeated database reads on high-traffic lookup endpoints. It was not implemented yet because the current SQLite-based scope is small and the added infrastructure would outweigh the immediate value.
+- Authentication middleware: an authentication layer could be added through API keys, Basic Auth, or token-based access once a clear identity and authorization model is defined. It was left out because the current project does not include login or user-session flows, so adding middleware now would artificial instead of well integrated.
+- Email notifications: reservation-ready, overdue, or reminder notifications could be implemented through an email provider and background processing. This was not included in the current version because it would require external service integration, delivery strategy decisions, and retry/error handling beyond the present scope, but i already have prior experience with email automation using IMAP and Outlook-based app integrations.
+- CSV/PDF export: reporting endpoints could be added for operational exports such as book inventory, loan history, or overdue loans. This was not implemented yet because the current priority was the core transactional flows, tests, and API quality rather than document generation workflows.
 
 ## Screenshots
 
